@@ -27,3 +27,7 @@ data/processed/chatbot_train_fr.csv
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Mobile app dependencies/artifacts
+mobile/node_modules/
+mobile/.expo/

@@ -1,0 +1,142 @@
+[
+  {
+    "id": "ml-001",
+    "topic": "fondamentaux",
+    "difficulty": "facile",
+    "question": "Quelle proposition décrit le mieux le machine learning supervisé ?",
+    "choices": [
+      "Apprendre une fonction à partir d'exemples étiquetés",
+      "Regrouper des données sans labels",
+      "Compresser des données en réduisant leur taille",
+      "Indexer un texte avec TF-IDF"
+    ],
+    "correct_index": 0,
+    "explanation": "Le supervisé apprend la relation entrée-sortie à partir de labels connus."
+  },
+  {
+    "id": "ml-002",
+    "topic": "evaluation",
+    "difficulty": "facile",
+    "question": "Quand les classes sont très déséquilibrées, quelle métrique est souvent plus informative que l'accuracy ?",
+    "choices": [
+      "F1-score",
+      "MSE",
+      "R2",
+      "Silhouette score"
+    ],
+    "correct_index": 0,
+    "explanation": "Le F1 combine précision et rappel, utile quand l'accuracy est trompeuse."
+  },
+  {
+    "id": "ml-003",
+    "topic": "evaluation",
+    "difficulty": "moyen",
+    "question": "Quel est l'objectif principal d'un jeu de test ?",
+    "choices": [
+      "Ajuster les hyperparamètres",
+      "Mesurer la performance finale hors entraînement",
+      "Nettoyer les données",
+      "Accélérer l'inférence"
+    ],
+    "correct_index": 1,
+    "explanation": "Le test sert à l'évaluation finale, il ne doit pas servir au tuning."
+  },
+  {
+    "id": "ml-004",
+    "topic": "donnees",
+    "difficulty": "moyen",
+    "question": "Quelle situation correspond à une data leakage ?",
+    "choices": [
+      "Utiliser StandardScaler entraîné sur train uniquement",
+      "Inclure une variable future indisponible en production",
+      "Retirer une colonne constante",
+      "Supprimer les doublons"
+    ],
+    "correct_index": 1,
+    "explanation": "La fuite survient quand une information de la cible ou du futur est injectée."
+  },
+  {
+    "id": "ml-005",
+    "topic": "algorithmes",
+    "difficulty": "moyen",
+    "question": "Quelle affirmation est correcte à propos de la régression logistique ?",
+    "choices": [
+      "Elle prédit uniquement des valeurs continues",
+      "Elle produit une probabilité pour la classe positive",
+      "Elle est non supervisée",
+      "Elle ne nécessite jamais de prétraitement"
+    ],
+    "correct_index": 1,
+    "explanation": "La régression logistique renvoie un score probabiliste utilisé avec un seuil."
+  },
+  {
+    "id": "ml-006",
+    "topic": "evaluation",
+    "difficulty": "moyen",
+    "question": "Quel est le rôle de la validation croisée ?",
+    "choices": [
+      "Réduire la taille des features",
+      "Estimer plus robustement la performance du modèle",
+      "Forcer la convergence de l'optimiseur",
+      "Créer des labels automatiquement"
+    ],
+    "correct_index": 1,
+    "explanation": "La cross-validation réduit la variance d'estimation en multipliant les splits."
+  },
+  {
+    "id": "ml-007",
+    "topic": "mlops",
+    "difficulty": "moyen",
+    "question": "Le concept drift correspond à :",
+    "choices": [
+      "Un changement de distribution des features uniquement",
+      "Un changement de la relation entre features et cible",
+      "Une baisse de la RAM serveur",
+      "Une erreur de parsing CSV"
+    ],
+    "correct_index": 1,
+    "explanation": "Le concept drift touche le mapping entrée-sortie, pas seulement la distribution des entrées."
+  },
+  {
+    "id": "ml-008",
+    "topic": "algorithmes",
+    "difficulty": "difficile",
+    "question": "Pourquoi choisir PR-AUC plutôt que ROC-AUC sur un problème de fraude très rare ?",
+    "choices": [
+      "PR-AUC est toujours plus élevé",
+      "PR-AUC focalise mieux la qualité sur la classe positive rare",
+      "ROC-AUC n'est pas défini en binaire",
+      "PR-AUC mesure uniquement la latence"
+    ],
+    "correct_index": 1,
+    "explanation": "PR-AUC met davantage l'accent sur le compromis précision/rappel de la classe minoritaire."
+  },
+  {
+    "id": "ml-009",
+    "topic": "donnees",
+    "difficulty": "facile",
+    "question": "Quel prétraitement est souvent nécessaire avant KNN ?",
+    "choices": [
+      "Standardiser ou normaliser les features",
+      "Supprimer toutes les colonnes numériques",
+      "Transformer le problème en clustering",
+      "Encoder la cible en texte"
+    ],
+    "correct_index": 0,
+    "explanation": "KNN dépend des distances, donc l'échelle des variables est critique."
+  },
+  {
+    "id": "ml-010",
+    "topic": "mlops",
+    "difficulty": "facile",
+    "question": "Quel est le principal objectif d'un monitoring modèle en production ?",
+    "choices": [
+      "Rendre l'entraînement plus rapide",
+      "Détecter dérives, dégradations et incidents",
+      "Supprimer la validation",
+      "Éviter les logs"
+    ],
+    "correct_index": 1,
+    "explanation": "Le monitoring suit qualité, drift, latence et stabilité en production."
+  }
+]

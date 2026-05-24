@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "QCM ML Mobile",
+    "slug": "qcm-ml-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0d3b2f"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0d3b2f"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
