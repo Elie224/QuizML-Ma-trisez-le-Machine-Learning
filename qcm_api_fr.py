@@ -452,9 +452,11 @@ FRONTEND_HTML = """
                         }
                         if (data.last_answer) {
                             const answerSeed = Number(data.answered || 0) + Number(data.score || 0);
-                            $('feedback').textContent = data.last_answer.is_correct
-                                ? (`${pickFeedbackMessage(SUCCESS_FEEDBACKS, answerSeed)} ${data.last_answer.explanation}`)
-                                : (`${pickFeedbackMessage(FAILURE_FEEDBACKS, answerSeed)} La bonne réponse est : ${data.last_answer.correct_choice}. ${data.last_answer.explanation}`);
+                            if (data.last_answer.is_correct) {
+                                $('feedback').textContent = pickFeedbackMessage(SUCCESS_FEEDBACKS, answerSeed) + ' ' + data.last_answer.explanation;
+                            } else {
+                                $('feedback').textContent = pickFeedbackMessage(FAILURE_FEEDBACKS, answerSeed) + ' La bonne réponse est : ' + data.last_answer.correct_choice + '. ' + data.last_answer.explanation;
+                            }
                         }
                         render(data);
                     } finally {
