@@ -31,6 +31,10 @@ class QcmEngineTests(unittest.TestCase):
         self.assertEqual(q["topic"], "evaluation")
 
     def test_structured_level_has_ten_questions(self) -> None:
+        for level in (1, 2):
+            state = self.store.create_session(topic="evaluation", category="facile", level=level)
+            self._answer_session_perfectly(state)
+
         state = self.store.create_session(topic="evaluation", category="facile", level=3)
         self.assertEqual(state["total"], 10)
         self.assertEqual(state["category"], "facile")
@@ -48,6 +52,47 @@ class QcmEngineTests(unittest.TestCase):
         self.assertEqual(len(level_one), 10)
         self.assertEqual(len(level_two), 10)
         self.assertTrue(level_one.isdisjoint(level_two))
+
+    def _answer_session_perfectly(self, state: dict) -> dict:
+        while not state["completed"]:
+            current_index = state["answered"]
+            question = self.store._sessions[state["session_id"]]["questions"][current_index]
+            state = self.store.answer(state["session_id"], question["correct_index"])
+        return state
+
+    def test_level_two_locked_until_level_one_perfect(self) -> None:
+        with self.assertRaises(ValueError):
+            self.store.create_session(topic="evaluation", category="facile", level=2)
+
+        state = self.store.create_session(topic="evaluation", category="facile", level=1)
+        current_index = state["answered"]
+        question = self.store._sessions[state["session_id"]]["questions"][current_index]
+        wrong_choice = 1 if question["correct_index"] == 0 else 0
+        failed = self.store.answer(state["session_id"], wrong_choice)
+        while not failed["completed"]:
+            current_index = failed["answered"]
+            question = self.store._sessions[failed["session_id"]]["questions"][current_index]
+            failed = self.store.answer(failed["session_id"], question["correct_index"])
+
+        with self.assertRaises(ValueError):
+            self.store.create_session(topic="evaluation", category="facile", level=2)
+
+        perfect = self.store.create_session(topic="evaluation", category="facile", level=1)
+        self._answer_session_perfectly(perfect)
+
+        unlocked = self.store.create_session(topic="evaluation", category="facile", level=2)
+        self.assertEqual(unlocked["level"], 2)
+
+    def test_next_category_locked_until_previous_category_completed(self) -> None:
+        with self.assertRaises(ValueError):
+            self.store.create_session(topic="evaluation", category="moyen", level=1)
+
+        for level in range(1, 11):
+            state = self.store.create_session(topic="evaluation", category="facile", level=level)
+            self._answer_session_perfectly(state)
+
+        unlocked = self.store.create_session(topic="evaluation", category="moyen", level=1)
+        self.assertEqual(unlocked["category"], "moyen")
 
     def test_missing_session_raises(self) -> None:
         with self.assertRaises(KeyError):

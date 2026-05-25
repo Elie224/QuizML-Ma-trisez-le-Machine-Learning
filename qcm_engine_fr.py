@@ -301,8 +301,117 @@ class QcmSessionStore:
         self.bank = bank
         self._lock = Lock()
         self._sessions: dict[str, dict] = {}
+        self._progress: dict[str, dict[str, set[int]]] = {}
+
+    def _topic_progress(self, topic: str) -> dict[str, set[int]]:
+        return self._progress.setdefault(topic, {})
+
+    def _passed_levels(self, topic: str, category: str) -> set[int]:
+        progress = self._topic_progress(topic)
+        return progress.setdefault(category, set())
+
+    def category_states(self, topic: str | None = None) -> list[dict]:
+        if not topic:
+            return [
+                {
+                    "value": category,
+                    "unlocked": category == CATEGORIES[0],
+                    "completed": False,
+                    "current": category == CATEGORIES[0],
+                }
+                for category in CATEGORIES
+            ]
+
+        progress = self._topic_progress(topic)
+        completed_categories = {
+            category for category in CATEGORIES if len(progress.get(category, set())) >= LEVELS_PER_CATEGORY
+        }
+        first_incomplete_index = next(
+            (index for index, category in enumerate(CATEGORIES) if category not in completed_categories),
+            len(CATEGORIES),
+        )
+        states: list[dict] = []
+        for index, category in enumerate(CATEGORIES):
+            completed = category in completed_categories
+            unlocked = first_incomplete_index == len(CATEGORIES) or index <= first_incomplete_index
+            current = first_incomplete_index < len(CATEGORIES) and index == first_incomplete_index
+            states.append(
+                {
+                    "value": category,
+                    "unlocked": unlocked,
+                    "completed": completed,
+                    "current": current,
+                }
+            )
+        return states
+
+    def level_states(self, topic: str | None = None, category: str | None = None) -> list[dict]:
+        if not category:
+            raise ValueError("category_required_for_level")
+        if category not in CATEGORIES:
+            raise ValueError("category_out_of_range")
+
+        if not topic:
+            return [
+                {
+                    "value": level,
+                    "unlocked": level == 1,
+                    "completed": False,
+                    "current": level == 1,
+                }
+                for level in range(1, LEVELS_PER_CATEGORY + 1)
+            ]
+
+        category_state = next(item for item in self.category_states(topic) if item["value"] == category)
+        passed_levels = self._passed_levels(topic, category)
+        next_level = next((level for level in range(1, LEVELS_PER_CATEGORY + 1) if level not in passed_levels), None)
+
+        states: list[dict] = []
+        for level in range(1, LEVELS_PER_CATEGORY + 1):
+            completed = level in passed_levels
+            if category_state["completed"]:
+                unlocked = True
+                current = False
+            elif category_state["current"]:
+                unlocked = level == next_level or completed
+                current = level == next_level
+            else:
+                unlocked = False
+                current = False
+            states.append(
+                {
+                    "value": level,
+                    "unlocked": unlocked,
+                    "completed": completed,
+                    "current": current,
+                }
+            )
+        return states
+
+    def _ensure_progression_is_unlocked(self, topic: str | None, category: str | None, level: int | None) -> None:
+        if not topic or not category or level is None:
+            return
+        category_state = next(item for item in self.category_states(topic) if item["value"] == category)
+        if not category_state["unlocked"]:
+            raise ValueError("category_locked_until_previous_completed")
+        level_state = next(item for item in self.level_states(topic, category) if item["value"] == level)
+        if not level_state["unlocked"]:
+            raise ValueError("level_locked_until_previous_completed")
+
+    def _record_progress_if_perfect(self, session: dict) -> None:
+        topic = session.get("topic")
+        category = session.get("category")
+        level = session.get("level")
+        if not topic or not category or level is None:
+            return
+        if session["index"] < len(session["questions"]):
+            return
+        if session["score"] != len(session["questions"]):
+            return
+        self._passed_levels(topic, category).add(int(level))
 
     def create_session(self, count: int = QUESTIONS_PER_LEVEL, topic: str | None = None, category: str | None = None, level: int | None = None) -> dict:
+        self._ensure_progression_is_unlocked(topic=topic, category=category, level=level)
         picked = self.bank.sample(count=count, topic=topic, category=category, level=level)
         session_id = str(uuid.uuid4())
         session = {
@@ -356,6 +465,7 @@ class QcmSessionStore:
                 "level": int(q["level"]),
             })
             session["index"] += 1
+            self._record_progress_if_perfect(session)
             return self._public_session_state(session)
 
     def get(self, session_id: str) -> dict:
@@ -400,5 +510,7 @@ class QcmSessionStore:
             "total": len(questions),
             "next_question": next_question,
             "last_answer": session["answers"][-1] if session["answers"] else None,
+            "category_states": self.category_states(session.get("topic")),
+            "level_states": self.level_states(session.get("topic"), session.get("category")) if session.get("category") else None,
             "topic_stats": topic_stats,
         }

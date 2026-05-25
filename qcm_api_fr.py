@@ -136,6 +136,8 @@ FRONTEND_HTML = """
         }
         .choice:hover { transform: translateY(-1px); border-color: #93c5fd; }
         .choice.selected { border-color: #2563eb; background: #eff6ff; }
+        .choice.locked { opacity: .45; cursor: not-allowed; background: #f3f4f6; }
+        .choice.done { border-color: #10b981; background: #ecfdf5; }
         .feedback { margin-top: 10px; min-height: 22px; color: #1e3a8a; }
         table {
             width: 100%;
@@ -278,6 +280,20 @@ FRONTEND_HTML = """
             $('levelsBox').innerHTML = '';
         }
 
+        function categoryOptionLabel(item) {
+            if (item.completed) return `${categoryLabel(item.value)} (terminée)`;
+            if (!item.unlocked) return `${categoryLabel(item.value)} (verrouillée)`;
+            if (item.current) return `${categoryLabel(item.value)} (en cours)`;
+            return categoryLabel(item.value);
+        }
+
+        function levelCardLabel(item) {
+            if (item.completed) return `Niveau ${item.value} terminé`;
+            if (!item.unlocked) return `Niveau ${item.value} verrouillé`;
+            if (item.current) return `Niveau ${item.value} à débloquer`;
+            return `Niveau ${item.value}`;
+        }
+
         async function loadLevels() {
             const params = new URLSearchParams({
                 topic: $('topic').value || '',
@@ -291,14 +307,22 @@ FRONTEND_HTML = """
             }
             const levels = data.levels || [];
             $('levelsBox').innerHTML = '';
-            for (const lvl of levels) {
+            for (const item of levels) {
                 const btn = document.createElement('div');
                 btn.className = 'choice';
-                btn.textContent = `Niveau ${lvl}`;
-                btn.onclick = () => startSessionForLevel(lvl);
+                if (!item.unlocked) {
+                    btn.classList.add('locked');
+                }
+                if (item.completed) {
+                    btn.classList.add('done');
+                }
+                btn.textContent = levelCardLabel(item);
+                if (item.unlocked) {
+                    btn.onclick = () => startSessionForLevel(item.value);
+                }
                 $('levelsBox').appendChild(btn);
             }
-            $('feedback').textContent = `Choisis un niveau (${levels.length} niveaux).`;
+            $('feedback').textContent = `Choisis un niveau (${levels.length} niveaux). Les niveaux suivants restent verrouillés tant que le précédent n'est pas validé à 100%.`;
         }
 
         async function startSessionForLevel(level) {
@@ -338,12 +362,29 @@ FRONTEND_HTML = """
             }
         }
 
-        function loadCategories() {
-            for (const category of CATEGORIES) {
+        async function loadCategories() {
+            const params = new URLSearchParams({
+                topic: $('topic').value || '',
+            });
+            const res = await fetch(`/qcm/categories?${params.toString()}`);
+            const data = await res.json();
+            const categories = data.categories || [];
+            $('category').innerHTML = '';
+            for (const item of categories) {
                 const opt = document.createElement('option');
-                opt.value = category;
-                opt.textContent = categoryLabel(category);
+                opt.value = item.value;
+                opt.textContent = categoryOptionLabel(item);
+                opt.disabled = !item.unlocked;
+                if (item.current) {
+                    opt.selected = true;
+                }
                 $('category').appendChild(opt);
+            }
+            if (!$('category').value && categories.length) {
+                const firstUnlocked = categories.find((item) => item.unlocked);
+                if (firstUnlocked) {
+                    $('category').value = firstUnlocked.value;
+                }
             }
         }
 
@@ -409,8 +450,18 @@ FRONTEND_HTML = """
             await loadLevels();
         };
 
-        loadTopics();
-        loadCategories();
+        $('topic').onchange = async () => {
+            await loadCategories();
+            $('levelsBox').innerHTML = '';
+            $('feedback').textContent = '';
+        };
+
+        async function bootstrap() {
+            await loadTopics();
+            await loadCategories();
+        }
+
+        bootstrap();
     </script>
 </body>
 </html>
@@ -449,14 +500,14 @@ def list_topics() -> dict[str, list[str]]:
 
 
 @app.get("/qcm/categories")
-def list_categories() -> dict[str, list[str]]:
-    return {"categories": bank.categories()}
+def list_categories(topic: str | None = None) -> dict[str, list[dict]]:
+    return {"categories": store.category_states(topic=topic)}
 
 
 @app.get("/qcm/levels")
-def list_levels(topic: str | None = None, category: str | None = None) -> dict[str, list[int]]:
+def list_levels(topic: str | None = None, category: str | None = None) -> dict[str, list[dict]]:
     try:
-        return {"levels": bank.levels(topic=topic, category=category)}
+        return {"levels": store.level_states(topic=topic, category=category)}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
