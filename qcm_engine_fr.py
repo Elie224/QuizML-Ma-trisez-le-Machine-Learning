@@ -6,7 +6,7 @@ from threading import Lock
 
 
 QUESTION_BANK_PATH = Path("data/qcm/ml_qcm_fr.json")
-QUESTIONS_PER_LEVEL = 20
+QUESTIONS_PER_LEVEL = 10
 LEVELS_PER_CATEGORY = 10
 CATEGORIES = ["facile", "moyen", "difficile", "tres difficile", "expert"]
 CATEGORY_CONTEXT = {
@@ -64,26 +64,7 @@ def _question_context(category: str, level: int) -> str:
 
 
 def _unique_question_text(base_question: str, category: str, level: int) -> str:
-    return f"{base_question} ({_question_context(category, level)})"
-
-
-def _explanation_variant(template: dict, templates: list[dict], template_index: int, category: str, level: int) -> dict:
-    explanation = str(template["explanation"])
-    distractors: list[str] = []
-    total_templates = len(templates)
-    offset = 1
-    while len(distractors) < 3 and offset < total_templates + 1:
-        candidate = str(templates[(template_index + offset) % total_templates]["explanation"])
-        if candidate != explanation and candidate not in distractors:
-            distractors.append(candidate)
-        offset += 1
-    choices = [explanation, *distractors]
-    return {
-        "question": f"Quel commentaire explique le mieux la bonne réponse sur {str(template['question']).lower()} ({_question_context(category, level)}) ?",
-        "choices": choices,
-        "correct_index": 0,
-        "explanation": f"La bonne justification est : {explanation}",
-    }
+    return f"Niveau {level} | {category.upper()} | {base_question}"
 
 
 TOPIC_BLUEPRINTS: dict[str, list[dict]] = {
@@ -233,33 +214,27 @@ class QuestionBank:
         for category in CATEGORIES:
             for level in range(1, LEVELS_PER_CATEGORY + 1):
                 for topic, templates in TOPIC_BLUEPRINTS.items():
-                    expanded_templates = list(templates)
-                    expanded_templates.extend(
-                        _explanation_variant(template, templates, index, category, level)
-                        for index, template in enumerate(templates)
-                    )
-                    for index, template in enumerate(expanded_templates, start=1):
-                            qnum = index
-                            question_text = _unique_question_text(
-                                base_question=str(template["question"]),
+                    for index, template in enumerate(templates, start=1):
+                        question_text = _unique_question_text(
+                            base_question=str(template["question"]),
+                            category=category,
+                            level=level,
+                        )
+                        if question_text in seen_texts:
+                            raise ValueError("duplicate_question_text_generated")
+                        seen_texts.add(question_text)
+                        out.append(
+                            Question(
+                                qid=f"{topic}-{category}-l{level:02d}-q{index:02d}",
+                                topic=topic,
                                 category=category,
                                 level=level,
+                                question=question_text,
+                                choices=list(template['choices']),
+                                correct_index=int(template['correct_index']),
+                                explanation=str(template['explanation']),
                             )
-                            if question_text in seen_texts:
-                                raise ValueError("duplicate_question_text_generated")
-                            seen_texts.add(question_text)
-                            out.append(
-                                Question(
-                                    qid=f"{topic}-{category}-l{level:02d}-q{qnum:02d}",
-                                    topic=topic,
-                                    category=category,
-                                    level=level,
-                                    question=question_text,
-                                    choices=list(template['choices']),
-                                    correct_index=int(template['correct_index']),
-                                    explanation=str(template['explanation']),
-                                )
-                            )
+                        )
         return out
 
     def questions_for(self, topic: str | None = None, category: str | None = None, level: int | None = None) -> list[Question]:
@@ -283,7 +258,7 @@ class QuestionBank:
             raise ValueError("No questions match the requested filters")
         if level is not None:
             if len(pool) < QUESTIONS_PER_LEVEL:
-                raise ValueError("level_must_have_20_questions")
+                raise ValueError("level_must_have_10_questions")
             return random.sample(pool, k=QUESTIONS_PER_LEVEL)
         pick_count = min(max(1, count), len(pool))
         return random.sample(pool, k=pick_count)

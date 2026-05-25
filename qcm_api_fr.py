@@ -307,7 +307,7 @@ FRONTEND_HTML = """
                 topic: $('topic').value || null,
                 category: $('category').value || null,
                 level,
-                count: 20,
+                count: 10,
             };
             const res = await fetch('/qcm/sessions', {
                 method: 'POST',
@@ -418,7 +418,7 @@ FRONTEND_HTML = """
 
 
 class CreateSessionRequest(BaseModel):
-    count: int = Field(default=20, ge=1, le=200)
+    count: int = Field(default=10, ge=1, le=100)
     topic: str | None = None
     category: str | None = None
     level: int | None = Field(default=None, ge=1, le=10)

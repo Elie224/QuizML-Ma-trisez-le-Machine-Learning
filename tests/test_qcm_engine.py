@@ -30,13 +30,24 @@ class QcmEngineTests(unittest.TestCase):
         q = state["next_question"]
         self.assertEqual(q["topic"], "evaluation")
 
-    def test_structured_level_has_twenty_questions(self) -> None:
+    def test_structured_level_has_ten_questions(self) -> None:
         state = self.store.create_session(topic="evaluation", category="facile", level=3)
-        self.assertEqual(state["total"], 20)
+        self.assertEqual(state["total"], 10)
         self.assertEqual(state["category"], "facile")
         self.assertEqual(state["level"], 3)
         self.assertEqual(state["next_question"]["category"], "facile")
         self.assertEqual(state["next_question"]["level"], 3)
+
+    def test_same_topic_does_not_repeat_between_levels(self) -> None:
+        level_one = {
+            q.question for q in self.bank.questions_for(topic="evaluation", category="facile", level=1)
+        }
+        level_two = {
+            q.question for q in self.bank.questions_for(topic="evaluation", category="facile", level=2)
+        }
+        self.assertEqual(len(level_one), 10)
+        self.assertEqual(len(level_two), 10)
+        self.assertTrue(level_one.isdisjoint(level_two))
 
     def test_missing_session_raises(self) -> None:
         with self.assertRaises(KeyError):
