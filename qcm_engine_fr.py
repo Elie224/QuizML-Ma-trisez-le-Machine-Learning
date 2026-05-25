@@ -28,6 +28,25 @@ LEVEL_FOCUS = [
     "maitrise operationnelle",
     "maitrise complete",
 ]
+CATEGORY_PROMPTS = {
+    "facile": "Dans une situation d'initiation au ML,",
+    "moyen": "Dans un exercice d'application en ML,",
+    "difficile": "Dans un cas d'approfondissement en ML,",
+    "tres difficile": "Dans un cas avance de ML,",
+    "expert": "Dans une analyse experte de ML,",
+}
+LEVEL_PROMPTS = [
+    "pour verifier les bases essentielles,",
+    "pour consolider les fondamentaux appliques,",
+    "pour reussir un premier raisonnement autonome,",
+    "pour structurer une analyse plus rigoureuse,",
+    "pour valider une comprehension solide,",
+    "pour traiter un contexte plus nuance,",
+    "pour analyser un cas avance,",
+    "pour resoudre un probleme complexe,",
+    "pour demontrer une maitrise operationnelle,",
+    "pour confirmer une maitrise complete,",
+]
 TOPICS = [
     "fondamentaux",
     "probabilites_statistiques",
@@ -57,14 +76,10 @@ def _bp(question: str, choices: list[str], correct_index: int, explanation: str)
     }
 
 
-def _question_context(category: str, level: int) -> str:
-    context = CATEGORY_CONTEXT[category]
-    focus = LEVEL_FOCUS[level - 1]
-    return f"{context}, {focus}"
-
-
 def _unique_question_text(base_question: str, category: str, level: int) -> str:
-    return f"Niveau {level} | {category.upper()} | {base_question}"
+    category_prompt = CATEGORY_PROMPTS[category]
+    level_prompt = LEVEL_PROMPTS[level - 1]
+    return f"{category_prompt} {level_prompt} {base_question}"
 
 
 TOPIC_BLUEPRINTS: dict[str, list[dict]] = {
