@@ -57,12 +57,33 @@ def _bp(question: str, choices: list[str], correct_index: int, explanation: str)
     }
 
 
-def _unique_question_text(base_question: str, category: str, level: int, variant: int) -> str:
+def _question_context(category: str, level: int) -> str:
     context = CATEGORY_CONTEXT[category]
     focus = LEVEL_FOCUS[level - 1]
-    if variant == 0:
-        return f"{base_question} ({context}, {focus})"
-    return f"Mise en situation ({context}, {focus}) : {base_question}"
+    return f"{context}, {focus}"
+
+
+def _unique_question_text(base_question: str, category: str, level: int) -> str:
+    return f"{base_question} ({_question_context(category, level)})"
+
+
+def _explanation_variant(template: dict, templates: list[dict], template_index: int, category: str, level: int) -> dict:
+    explanation = str(template["explanation"])
+    distractors: list[str] = []
+    total_templates = len(templates)
+    offset = 1
+    while len(distractors) < 3 and offset < total_templates + 1:
+        candidate = str(templates[(template_index + offset) % total_templates]["explanation"])
+        if candidate != explanation and candidate not in distractors:
+            distractors.append(candidate)
+        offset += 1
+    choices = [explanation, *distractors]
+    return {
+        "question": f"Quel commentaire explique le mieux la bonne réponse sur {str(template['question']).lower()} ({_question_context(category, level)}) ?",
+        "choices": choices,
+        "correct_index": 0,
+        "explanation": f"La bonne justification est : {explanation}",
+    }
 
 
 TOPIC_BLUEPRINTS: dict[str, list[dict]] = {
@@ -212,14 +233,17 @@ class QuestionBank:
         for category in CATEGORIES:
             for level in range(1, LEVELS_PER_CATEGORY + 1):
                 for topic, templates in TOPIC_BLUEPRINTS.items():
-                    for variant in range(2):
-                        for index, template in enumerate(templates, start=1):
-                            qnum = variant * len(templates) + index
+                    expanded_templates = list(templates)
+                    expanded_templates.extend(
+                        _explanation_variant(template, templates, index, category, level)
+                        for index, template in enumerate(templates)
+                    )
+                    for index, template in enumerate(expanded_templates, start=1):
+                            qnum = index
                             question_text = _unique_question_text(
                                 base_question=str(template["question"]),
                                 category=category,
                                 level=level,
-                                variant=variant,
                             )
                             if question_text in seen_texts:
                                 raise ValueError("duplicate_question_text_generated")
@@ -335,6 +359,7 @@ class QcmSessionStore:
                 "choice_index": int(choice_index),
                 "is_correct": is_correct,
                 "correct_index": int(q["correct_index"]),
+                "correct_choice": q["choices"][int(q["correct_index"])],
                 "explanation": q["explanation"],
                 "topic": q["topic"],
                 "category": q["category"],

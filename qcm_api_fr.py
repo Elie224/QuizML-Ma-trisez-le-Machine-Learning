@@ -388,7 +388,7 @@ FRONTEND_HTML = """
                         if (data.last_answer) {
                             $('feedback').textContent = data.last_answer.is_correct
                                 ? ('Bonne réponse. ' + data.last_answer.explanation)
-                                : (`Mauvaise réponse. Bonne réponse : ${data.last_answer.correct_index + 1}. ` + data.last_answer.explanation);
+                                : (`Mauvaise réponse. Bonne réponse : ${data.last_answer.correct_choice}. Explication : ${data.last_answer.explanation}`);
                         }
                         render(data);
                     } finally {

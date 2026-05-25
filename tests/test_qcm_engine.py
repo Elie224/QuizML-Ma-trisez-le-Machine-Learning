@@ -46,6 +46,19 @@ class QcmEngineTests(unittest.TestCase):
         texts = [q.question for q in self.bank.questions_for()]
         self.assertEqual(len(texts), len(set(texts)))
 
+    def test_wrong_answer_returns_correct_choice_and_explanation(self) -> None:
+        state = self.store.create_session(count=1, topic="evaluation")
+        current = self.store.get(state["session_id"])
+        question = current["next_question"]
+        correct_index = self.store._sessions[state["session_id"]]["questions"][0]["correct_index"]
+        wrong_choice = 1 if correct_index == 0 else 0
+
+        result = self.store.answer(state["session_id"], wrong_choice)
+
+        self.assertFalse(result["last_answer"]["is_correct"])
+        self.assertEqual(result["last_answer"]["correct_choice"], question["choices"][correct_index])
+        self.assertTrue(result["last_answer"]["explanation"])
+
 
 if __name__ == "__main__":
     unittest.main()

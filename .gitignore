@@ -31,3 +31,4 @@ Thumbs.db
 # Mobile app dependencies/artifacts
 mobile/node_modules/
 mobile/.expo/
+deploy_ctx/
