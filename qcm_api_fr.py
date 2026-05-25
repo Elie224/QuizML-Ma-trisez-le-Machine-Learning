@@ -428,8 +428,8 @@ FRONTEND_HTML = """
                         }
                         if (data.last_answer) {
                             $('feedback').textContent = data.last_answer.is_correct
-                                ? ('Bonne réponse. ' + data.last_answer.explanation)
-                                : (`Mauvaise réponse. Bonne réponse : ${data.last_answer.correct_choice}. Explication : ${data.last_answer.explanation}`);
+                                ? (`🎉 Bravo ! Bonne réponse. ${data.last_answer.explanation}`)
+                                : (`💪 Courage ! Ce n'est pas la bonne réponse. La bonne réponse est : ${data.last_answer.correct_choice}. ${data.last_answer.explanation}`);
                         }
                         render(data);
                     } finally {
