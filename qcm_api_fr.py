@@ -452,11 +452,13 @@ FRONTEND_HTML = """
                         }
                         if (data.last_answer) {
                             const answerSeed = Number(data.answered || 0) + Number(data.score || 0);
+                            var feedbackMsg = '';
                             if (data.last_answer.is_correct) {
-                                $('feedback').textContent = pickFeedbackMessage(SUCCESS_FEEDBACKS, answerSeed) + ' ' + data.last_answer.explanation;
+                                feedbackMsg = pickFeedbackMessage(SUCCESS_FEEDBACKS, answerSeed) + ' ' + (data.last_answer.explanation || '');
                             } else {
-                                $('feedback').textContent = pickFeedbackMessage(FAILURE_FEEDBACKS, answerSeed) + ' La bonne réponse est : ' + data.last_answer.correct_choice + '. ' + data.last_answer.explanation;
+                                feedbackMsg = pickFeedbackMessage(FAILURE_FEEDBACKS, answerSeed) + ' La bonne réponse est : ' + (data.last_answer.correct_choice || '') + '. ' + (data.last_answer.explanation || '');
                             }
+                            $('feedback').textContent = feedbackMsg;
                         }
                         render(data);
                     } finally {
