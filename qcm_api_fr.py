@@ -212,6 +212,26 @@ FRONTEND_HTML = """
         let selectedLevel = null;
         const $ = (id) => document.getElementById(id);
         const CATEGORIES = ['facile', 'moyen', 'difficile', 'tres difficile', 'expert'];
+        const SUCCESS_FEEDBACKS = [
+            '🎉 Bravo ! Tu as trouvé la bonne réponse.',
+            '✅ Excellent choix ! C\'est la bonne réponse.',
+            '🌟 Bien joué ! Tu maîtrises bien cette question.',
+            '🚀 Super ! Réponse correcte, tu avances bien.',
+            '👏 Très bon réflexe ! La réponse est juste.',
+            '💡 Parfait ! Tu as visé juste.',
+            '🥳 Réussi ! Tu peux être fier de cette réponse.',
+            '🔥 Oui ! C\'est exactement ce qu\'il fallait répondre.',
+        ];
+        const FAILURE_FEEDBACKS = [
+            '💪 Courage ! Ce n\'est pas encore ça.',
+            '🙂 Presque ! Tu es sur la bonne voie.',
+            '📘 Ce n\'est pas la bonne réponse, mais tu peux progresser.',
+            '🧠 Bon essai ! On corrige ça ensemble.',
+            '🌱 Ce n\'est pas grave, chaque erreur aide à apprendre.',
+            '🔎 Raté pour cette fois, regardons la bonne réponse.',
+            '✨ Continue comme ça, tu vas y arriver.',
+            '🤝 Essaie encore mentalement avec l\'explication ci-dessous.',
+        ];
 
         function categoryLabel(category) {
             if (!category) return '-';
@@ -292,6 +312,10 @@ FRONTEND_HTML = """
             if (!item.unlocked) return `Niveau ${item.value} verrouillé`;
             if (item.current) return `Niveau ${item.value} à débloquer`;
             return `Niveau ${item.value}`;
+        }
+
+        function pickFeedbackMessage(messages, seed) {
+            return messages[seed % messages.length];
         }
 
         async function loadLevels() {
@@ -427,9 +451,10 @@ FRONTEND_HTML = """
                             return;
                         }
                         if (data.last_answer) {
+                            const answerSeed = Number(data.answered || 0) + Number(data.score || 0);
                             $('feedback').textContent = data.last_answer.is_correct
-                                ? (`🎉 Bravo ! Bonne réponse. ${data.last_answer.explanation}`)
-                                : (`💪 Courage ! Ce n'est pas la bonne réponse. La bonne réponse est : ${data.last_answer.correct_choice}. ${data.last_answer.explanation}`);
+                                ? (`${pickFeedbackMessage(SUCCESS_FEEDBACKS, answerSeed)} ${data.last_answer.explanation}`)
+                                : (`${pickFeedbackMessage(FAILURE_FEEDBACKS, answerSeed)} La bonne réponse est : ${data.last_answer.correct_choice}. ${data.last_answer.explanation}`);
                         }
                         render(data);
                     } finally {
